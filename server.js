@@ -28,7 +28,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // CORS
 app.use(cors({
-  origin: 'https://ybcolcs.vercel.app/login',
+  origin: 'https://ybcolcs.vercel.app',
   credentials: true
 }));
 
