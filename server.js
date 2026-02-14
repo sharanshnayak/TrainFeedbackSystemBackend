@@ -28,7 +28,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // CORS
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: 'https://trainfeedbacksystem.netlify.app',
   credentials: true
 }));
 
