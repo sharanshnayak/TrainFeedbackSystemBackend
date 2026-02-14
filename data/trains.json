@@ -1,0 +1,22 @@
+[
+  { "trainNo": "12301", "trainName": "Rajdhani Express" },
+  { "trainNo": "12302", "trainName": "Howrah Rajdhani" },
+  { "trainNo": "12951", "trainName": "Mumbai Rajdhani" },
+  { "trainNo": "12423", "trainName": "Dibrugarh Rajdhani" },
+  { "trainNo": "12259", "trainName": "Duronto Express" },
+  { "trainNo": "12260", "trainName": "Howrah Duronto" },
+  { "trainNo": "12801", "trainName": "Purushottam Express" },
+  { "trainNo": "12802", "trainName": "Puri Purushottam" },
+  { "trainNo": "12621", "trainName": "Tamil Nadu Express" },
+  { "trainNo": "12622", "trainName": "Tamil Nadu SF" },
+  { "trainNo": "12951", "trainName": "Shatabdi Express" },
+  { "trainNo": "12952", "trainName": "New Delhi Shatabdi" },
+  { "trainNo": "12009", "trainName": "Shatabdi Express" },
+  { "trainNo": "12010", "trainName": "Mumbai Shatabdi" },
+  { "trainNo": "22691", "trainName": "Rajdhani Express" },
+  { "trainNo": "22692", "trainName": "Bangalore Rajdhani" },
+  { "trainNo": "12213", "trainName": "Yuva Express" },
+  { "trainNo": "12214", "trainName": "Delhi Yuva" },
+  { "trainNo": "12627", "trainName": "Karnataka Express" },
+  { "trainNo": "12628", "trainName": "Bangalore Karnataka" }
+]

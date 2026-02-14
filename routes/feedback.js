@@ -1,0 +1,244 @@
+const express = require('express');
+const router = express.Router();
+const { body, validationResult } = require('express-validator');
+const Feedback = require('../models/Feedback');
+const { protect } = require('../middleware/auth');
+
+// @route   POST /api/feedback
+// @desc    Create a new feedback
+// @access  Private
+router.post('/', protect, [
+  body('date').isISO8601().withMessage('Valid date is required'),
+  body('trainNo').trim().notEmpty().withMessage('Train number is required'),
+  body('trainName').trim().notEmpty().withMessage('Train name is required'),
+  body('fromStation').trim().notEmpty().withMessage('From station is required'),
+  body('toStation').trim().notEmpty().withMessage('To station is required'),
+  body('coachNo').trim().notEmpty().withMessage('Coach number is required'),
+  body('pnr').matches(/^\d+$/).withMessage('PNR must contain only numbers'),
+  body('mobile').matches(/^\d{10}$/).withMessage('Mobile must be a valid 10-digit number'),
+  body('psi').isNumeric().withMessage('PSI is required and must be a number'),
+  body('reportDate').isISO8601().withMessage('Valid report date is required')
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ success: false, errors: errors.array() });
+  }
+
+  try {
+    const {
+      date,
+      trainNo,
+      trainName,
+      fromStation,
+      toStation,
+      coachNo,
+      pnr,
+      mobile,
+      ns1,
+      ns2,
+      ns3,
+      psi,
+      reportDate,
+      feedbackText,
+      feedbackRating,
+      totalFeedbacks,
+      totalPercentageAtPSI,
+      averagePSIRoundTrip
+    } = req.body;
+
+    // Validation: Either feedbackText or feedbackRating must be provided
+    if (!feedbackText && !feedbackRating) {
+      return res.status(400).json({
+        success: false,
+        message: 'Either feedback text or feedback rating is required'
+      });
+    }
+
+    // Get the count of feedbacks for this train on this date
+    const feedbackDate = new Date(date);
+    const startOfDay = new Date(feedbackDate.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(feedbackDate.setHours(23, 59, 59, 999));
+
+    const feedbackCount = await Feedback.countDocuments({
+      trainNo,
+      date: { $gte: startOfDay, $lte: endOfDay }
+    });
+
+    const feedbackNo = feedbackCount + 1;
+
+    // Create feedback
+    const feedback = await Feedback.create({
+      feedbackNo,
+      date,
+      trainNo,
+      trainName,
+      fromStation,
+      toStation,
+      coachNo,
+      pnr,
+      mobile,
+      ns1: ns1 || 0,
+      ns2: ns2 || 0,
+      ns3: ns3 || 0,
+      psi,
+      reportDate,
+      feedbackText: feedbackText || '',
+      feedbackRating: feedbackRating || '',
+      totalFeedbacks: totalFeedbacks || 0,
+      totalPercentageAtPSI: totalPercentageAtPSI || 0,
+      averagePSIRoundTrip: averagePSIRoundTrip || 0,
+      submittedBy: req.user._id,
+      submittedByUserId: req.user.userId
+    });
+
+    res.status(201).json({
+      success: true,
+      data: feedback
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message
+    });
+  }
+});
+
+// @route   GET /api/feedback/count
+// @desc    Get feedback count for a train on a specific date
+// @access  Private
+router.get('/count', protect, async (req, res) => {
+  try {
+    const { trainNo, date } = req.query;
+
+    if (!trainNo || !date) {
+      return res.status(400).json({
+        success: false,
+        message: 'Train number and date are required'
+      });
+    }
+
+    const feedbackDate = new Date(date);
+    const startOfDay = new Date(feedbackDate.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(feedbackDate.setHours(23, 59, 59, 999));
+
+    const count = await Feedback.countDocuments({
+      trainNo,
+      date: { $gte: startOfDay, $lte: endOfDay }
+    });
+
+    res.json({
+      success: true,
+      count
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+// @route   GET /api/feedback/search
+// @desc    Search feedbacks by train number and date
+// @access  Private
+router.get('/search', protect, async (req, res) => {
+  try {
+    const { trainNo, date } = req.query;
+
+    if (!trainNo || !date) {
+      return res.status(400).json({
+        success: false,
+        message: 'Train number and date are required'
+      });
+    }
+
+    const feedbackDate = new Date(date);
+    const startOfDay = new Date(feedbackDate.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(feedbackDate.setHours(23, 59, 59, 999));
+
+    const feedbacks = await Feedback.find({
+      trainNo,
+      date: { $gte: startOfDay, $lte: endOfDay }
+    }).sort({ feedbackNo: 1 });
+
+    res.json({
+      success: true,
+      count: feedbacks.length,
+      data: feedbacks
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+// @route   GET /api/feedback/:id
+// @desc    Get feedback by ID
+// @access  Private
+router.get('/:id', protect, async (req, res) => {
+  try {
+    const feedback = await Feedback.findById(req.params.id);
+
+    if (!feedback) {
+      return res.status(404).json({
+        success: false,
+        message: 'Feedback not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: feedback
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+// @route   GET /api/feedback
+// @desc    Get all feedbacks with pagination
+// @access  Private
+router.get('/', protect, async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const total = await Feedback.countDocuments();
+    const feedbacks = await Feedback.find()
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .skip(skip);
+
+    res.json({
+      success: true,
+      count: feedbacks.length,
+      total,
+      page,
+      pages: Math.ceil(total / limit),
+      data: feedbacks
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+module.exports = router;
+
+
+
+
