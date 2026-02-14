@@ -28,7 +28,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // CORS
 app.use(cors({
-  origin: 'https://trainfeedbacksystem.netlify.app',
+  origin: 'https://ybcolcs.vercel.app/login',
   credentials: true
 }));
 
