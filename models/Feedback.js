@@ -57,7 +57,7 @@ const feedbackSchema = new mongoose.Schema({
   },
   feedbackRating: {
     type: String,
-    enum: ['', 'poor', 'good', 'very good', 'excellent']
+    enum: ['', 'poor', 'avergae' 'good', 'very good', 'excellent']
   },
   totalFeedbacks: {
     type: Number,
