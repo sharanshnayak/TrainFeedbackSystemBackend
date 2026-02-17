@@ -11,8 +11,7 @@ router.post('/', protect, [
   body('date').isISO8601().withMessage('Valid date is required'),
   body('trainNo').trim().notEmpty().withMessage('Train number is required'),
   body('trainName').trim().notEmpty().withMessage('Train name is required'),
-  body('fromStation').trim().notEmpty().withMessage('From station is required'),
-  body('toStation').trim().notEmpty().withMessage('To station is required'),
+  body('feedbackNo').trim().notEmpty().withMessage('Feedback number is required').isInt().withMessage('Feedback number must be an integer'),
   body('coachNo').trim().notEmpty().withMessage('Coach number is required'),
   body('pnr').matches(/^\d+$/).withMessage('PNR must contain only numbers'),
   body('mobile').matches(/^\d{10}$/).withMessage('Mobile must be a valid 10-digit number'),
@@ -26,11 +25,10 @@ router.post('/', protect, [
 
   try {
     const {
+      feedbackNo: feedbackNoFromBody,
       date,
       trainNo,
       trainName,
-      fromStation,
-      toStation,
       coachNo,
       pnr,
       mobile,
@@ -54,17 +52,8 @@ router.post('/', protect, [
       });
     }
 
-    // Get the count of feedbacks for this train on this date
-    const feedbackDate = new Date(date);
-    const startOfDay = new Date(feedbackDate.setHours(0, 0, 0, 0));
-    const endOfDay = new Date(feedbackDate.setHours(23, 59, 59, 999));
-
-    const feedbackCount = await Feedback.countDocuments({
-      trainNo,
-      date: { $gte: startOfDay, $lte: endOfDay }
-    });
-
-    const feedbackNo = feedbackCount + 1;
+    // Use feedbackNo provided by client
+    const feedbackNo = Number(feedbackNoFromBody);
 
     // Create feedback
     const feedback = await Feedback.create({
@@ -72,8 +61,6 @@ router.post('/', protect, [
       date,
       trainNo,
       trainName,
-      fromStation,
-      toStation,
       coachNo,
       pnr,
       mobile,

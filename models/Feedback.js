@@ -17,14 +17,6 @@ const feedbackSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Please provide train name']
   },
-  fromStation: {
-    type: String,
-    required: [true, 'Please provide from station']
-  },
-  toStation: {
-    type: String,
-    required: [true, 'Please provide to station']
-  },
   coachNo: {
     type: String,
     required: [true, 'Please provide coach number']
