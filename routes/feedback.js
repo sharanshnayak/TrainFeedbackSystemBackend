@@ -83,6 +83,7 @@ router.post('/', protect, [
       data: feedback
     });
   } catch (error) {
+    console.log(error);
     console.error(error);
     res.status(500).json({
       success: false,
