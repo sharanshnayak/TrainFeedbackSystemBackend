@@ -225,6 +225,81 @@ router.get('/', protect, async (req, res) => {
   }
 });
 
+// @route   PUT /api/feedback/:id
+// @desc    Update feedback by ID
+// @access  Private
+router.put('/:id', protect, async (req, res) => {
+  try {
+    const { feedbackNo, date, trainNo, trainName, coachNo, pnr, mobile, ns1, ns2, ns3, psi, reportDate, feedbackText, feedbackRating, totalFeedbacks, totalPercentageAtPSI, averagePSIRoundTrip } = req.body;
+
+    let feedback = await Feedback.findById(req.params.id);
+    if (!feedback) {
+      return res.status(404).json({ success: false, message: 'Feedback not found' });
+    }
+
+    if (feedbackNo !== undefined) feedback.feedbackNo = feedbackNo;
+    if (date !== undefined) feedback.date = date;
+    if (trainNo !== undefined) feedback.trainNo = trainNo;
+    if (trainName !== undefined) feedback.trainName = trainName;
+    if (coachNo !== undefined) feedback.coachNo = coachNo;
+    if (pnr !== undefined) feedback.pnr = pnr;
+    if (mobile !== undefined) feedback.mobile = mobile;
+    if (ns1 !== undefined) feedback.ns1 = ns1;
+    if (ns2 !== undefined) feedback.ns2 = ns2;
+    if (ns3 !== undefined) feedback.ns3 = ns3;
+    if (psi !== undefined) feedback.psi = psi;
+    if (reportDate !== undefined) feedback.reportDate = reportDate;
+    if (feedbackText !== undefined) feedback.feedbackText = feedbackText;
+    if (feedbackRating !== undefined) feedback.feedbackRating = feedbackRating;
+    if (totalFeedbacks !== undefined) feedback.totalFeedbacks = totalFeedbacks;
+    if (totalPercentageAtPSI !== undefined) feedback.totalPercentageAtPSI = totalPercentageAtPSI;
+    if (averagePSIRoundTrip !== undefined) feedback.averagePSIRoundTrip = averagePSIRoundTrip;
+
+    feedback = await feedback.save();
+
+    res.json({
+      success: true,
+      message: 'Feedback updated successfully',
+      data: feedback
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message
+    });
+  }
+});
+
+// @route   DELETE /api/feedback/:id
+// @desc    Delete feedback by ID
+// @access  Private
+router.delete('/:id', protect, async (req, res) => {
+  try {
+    const feedback = await Feedback.findByIdAndDelete(req.params.id);
+
+    if (!feedback) {
+      return res.status(404).json({
+        success: false,
+        message: 'Feedback not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Feedback deleted successfully'
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;
 
 
