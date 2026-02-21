@@ -5,17 +5,18 @@ const path = require('path');
  * Parse XLSX file and extract feedback data
  * Actual XLSX structure:
  * - Row 1: Train no. as column header, Report date
- * - Row 2: Column labels (Coach, Sr. No., Feedback No., PNR, Mobile, NS-1, NS-2, NS-3, PSI)
- * - Row 3+: Feedback data rows
+ * - Row 2: Train Name label, Train name value
+ * - Row 3: Column labels (Coach, Sr. No., Feedback No., PNR, Mobile, NS-1, NS-2, NS-3, PSI)
+ * - Row 4+: Feedback data rows
  * - Last row: Total row (ignored)
  */
 const parseXlsxFile = (filePath, debug = false) => {
   try {
-    // Read workbook with header row 2
     const workbook = xlsx.readFile(filePath);
     const sheetNames = workbook.SheetNames;
     
     const allFeedbacks = [];
+    const sheetData = [];
     const errors = [];
 
     if (debug) {
@@ -27,58 +28,39 @@ const parseXlsxFile = (filePath, debug = false) => {
     // Process each sheet
     sheetNames.forEach((sheetName) => {
       const worksheet = workbook.Sheets[sheetName];
-      
-      // Get raw sheet data to access headers properly
       const rawData = xlsx.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
       
       if (debug) {
         console.log(`\n📋 Sheet: "${sheetName}"`);
         console.log(`   Total rows: ${rawData.length}`);
-        if (rawData.length > 0) {
-          console.log(`   Row 1 (Train header):`, rawData[0]);
-        }
-        if (rawData.length > 1) {
-          console.log(`   Row 2 (Column names):`, rawData[1]);
-        }
-        if (rawData.length > 2) {
-          console.log(`   Row 3 (First data):`, rawData[2]);
-        }
       }
       
-      if (rawData.length < 3) {
+      if (rawData.length < 4) {
         errors.push({
           sheet: sheetName,
-          error: 'Not enough rows in sheet (need at least 3 rows)'
+          error: 'Not enough rows in sheet (need at least 4 rows: train info, train name, column headers, data)'
         });
         return;
       }
 
-      // Row 1: Extract train number (first non-empty numeric cell) and report date
+      // Row 1: Extract train number and report date
       const headerRow = rawData[0];
       let trainNo = '';
       let reportDate = new Date();
       
-      // Find train number and report date from first row
       for (let i = 0; i < headerRow.length; i++) {
         const cell = String(headerRow[i]).trim();
         
-        // Check if it's a number (train number)
         if (cell && /^\d+$/.test(cell) && !trainNo) {
           trainNo = cell;
         }
         
-        // Check for date
         if (cell && !reportDate && (cell.includes('/') || cell.includes('-') || !isNaN(parseFloat(cell)))) {
           const parsed = parseExcelDate(cell);
           if (parsed) {
             reportDate = parsed;
           }
         }
-      }
-
-      if (debug) {
-        console.log(`   Extracted Train No: "${trainNo}"`);
-        console.log(`   Extracted Report Date: "${reportDate}"`);
       }
 
       if (!trainNo) {
@@ -89,31 +71,33 @@ const parseXlsxFile = (filePath, debug = false) => {
         return;
       }
 
-      // Row 2: Get column names
-      const columnRow = rawData[1];
-      if (debug) {
-        console.log(`   Column headers: ${JSON.stringify(columnRow)}`);
+      // Row 2: Extract train name
+      let trainName = '';
+      const trainNameRow = rawData[1];
+      for (let i = 0; i < trainNameRow.length - 1; i++) {
+        const cell = String(trainNameRow[i]).toLowerCase().trim();
+        if (cell.includes('train name')) {
+          trainName = String(trainNameRow[i + 1]).trim();
+          break;
+        }
       }
 
-      // Map column indices based on header row
+      // Row 3: Get column names
+      const columnRow = rawData[2];
       const colIndices = findColumnIndices(columnRow);
-      if (debug) {
-        console.log(`   Column indices:`, colIndices);
-      }
 
-      // Process data rows (starting from row 3)
-      for (let rowIdx = 2; rowIdx < rawData.length; rowIdx++) {
+      const sheetFeedbacks = [];
+
+      // Process data rows (starting from row 4)
+      for (let rowIdx = 3; rowIdx < rawData.length; rowIdx++) {
         const row = rawData[rowIdx];
 
-        // Skip empty rows
         if (!row || row.length === 0 || row.every(cell => !cell)) {
           continue;
         }
 
-        // Stop at Total row
         const firstCell = String(row[colIndices.srNo] || '').toLowerCase().trim();
         if (firstCell === 'total' || firstCell.includes('total')) {
-          if (debug) console.log(`   Stopping at Total row (${rowIdx + 1})`);
           break;
         }
 
@@ -121,13 +105,13 @@ const parseXlsxFile = (filePath, debug = false) => {
           const feedbackData = extractFeedbackRow(row, colIndices, trainNo, reportDate, debug);
           
           if (feedbackData) {
+            feedbackData.trainName = trainName;
+            feedbackData.sheetName = sheetName;
             const validation = validateFeedbackRow(feedbackData);
             
             if (validation.valid) {
+              sheetFeedbacks.push(feedbackData);
               allFeedbacks.push(feedbackData);
-              if (debug && rowIdx <= 4) {
-                console.log(`   ✓ Row ${rowIdx + 1} valid:`, feedbackData);
-              }
             } else {
               errors.push({
                 sheet: sheetName,
@@ -135,9 +119,6 @@ const parseXlsxFile = (filePath, debug = false) => {
                 data: feedbackData,
                 errors: validation.errors
               });
-              if (debug) {
-                console.log(`   ✗ Row ${rowIdx + 1} invalid:`, validation.errors);
-              }
             }
           }
         } catch (error) {
@@ -146,16 +127,24 @@ const parseXlsxFile = (filePath, debug = false) => {
             row: rowIdx + 1,
             error: error.message
           });
-          if (debug) {
-            console.log(`   ✗ Row ${rowIdx + 1} error: ${error.message}`);
-          }
         }
+      }
+
+      if (sheetFeedbacks.length > 0) {
+        sheetData.push({
+          sheetName,
+          trainNo,
+          trainName,
+          reportDate,
+          feedbacks: sheetFeedbacks
+        });
       }
     });
 
     return {
       success: errors.length === 0,
       feedbacks: allFeedbacks,
+      sheetData: sheetData,
       errors: errors,
       totalParsed: allFeedbacks.length
     };
@@ -164,6 +153,7 @@ const parseXlsxFile = (filePath, debug = false) => {
     return {
       success: false,
       feedbacks: [],
+      sheetData: [],
       errors: [{ error: error.message }],
       totalParsed: 0
     };

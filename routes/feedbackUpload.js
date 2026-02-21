@@ -66,7 +66,8 @@ router.post('/upload-xlsx', protect, upload.single('file'), async (req, res) => 
         message: 'Failed to parse XLSX file',
         errors: parseResult.errors,
         totalParsed: 0,
-        feedbacks: []
+        feedbacks: [],
+        sheetData: []
       });
     }
 
@@ -133,6 +134,7 @@ router.post('/upload-xlsx', protect, upload.single('file'), async (req, res) => 
       success: parseResult.errors.length === 0 && extractionErrors.length === 0,
       totalExtracted: feedbacksForDisplay.length,
       feedbacks: feedbacksForDisplay,
+      sheetData: parseResult.sheetData || [],
       extractionErrors: normalizedParseErrors,
       validationErrors: extractionErrors,
       message: `Successfully extracted ${feedbacksForDisplay.length} feedbacks from XLSX file. Please review and submit.`
