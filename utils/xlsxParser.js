@@ -76,7 +76,7 @@ const parseXlsxFile = (filePath, debug = false) => {
       const trainNameRow = rawData[1];
       for (let i = 0; i < trainNameRow.length - 1; i++) {
         const cell = String(trainNameRow[i]).toLowerCase().trim();
-        if (cell.includes('train name')) {
+        if (cell.includes('Train Name')) {
           trainName = String(trainNameRow[i + 1]).trim();
           break;
         }
