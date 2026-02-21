@@ -104,7 +104,7 @@ router.get('/count', protect, async (req, res) => {
 
     const count = await Feedback.countDocuments({
       trainNo,
-      date: { $gte: startOfDay, $lte: endOfDay }
+      reportDate: { $gte: startOfDay, $lte: endOfDay }
     });
 
     res.json({
@@ -140,7 +140,7 @@ router.get('/search', protect, async (req, res) => {
 
     const feedbacks = await Feedback.find({
       trainNo,
-      date: { $gte: startOfDay, $lte: endOfDay }
+      reportDate: { $gte: startOfDay, $lte: endOfDay }
     }).sort({ feedbackNo: 1 });
 
     res.json({
@@ -221,7 +221,7 @@ router.get('/', protect, async (req, res) => {
 // @access  Private
 router.put('/:id', protect, async (req, res) => {
   try {
-    const { feedbackNo, date, trainNo, trainName, coachNo, pnr, mobile, ns1, ns2, ns3, psi, reportDate, feedbackText, feedbackRating, totalFeedbacks, totalPercentageAtPSI, averagePSIRoundTrip } = req.body;
+    const { feedbackNo, trainNo, trainName, coachNo, pnr, mobile, ns1, ns2, ns3, psi, reportDate, feedbackText, feedbackRating, totalFeedbacks, totalPercentageAtPSI, averagePSIRoundTrip } = req.body;
 
     let feedback = await Feedback.findById(req.params.id);
     if (!feedback) {
@@ -229,7 +229,6 @@ router.put('/:id', protect, async (req, res) => {
     }
 
     if (feedbackNo !== undefined) feedback.feedbackNo = feedbackNo;
-    if (date !== undefined) feedback.date = date;
     if (trainNo !== undefined) feedback.trainNo = trainNo;
     if (trainName !== undefined) feedback.trainName = trainName;
     if (coachNo !== undefined) feedback.coachNo = coachNo;
