@@ -322,52 +322,56 @@ const validateFeedbackRow = (feedbackData) => {
 };
 
 /**
- * Parse Excel date format - handles both serial numbers and strings
- * Returns ISO string with correct date (no timezone shifting)
+ * Parse Excel date format and return as dd/mm/yyyy string
+ * Handles both date serial numbers and date strings
  */
 const parseExcelDate = (dateValue) => {
   if (!dateValue) return null;
 
-  // If it's a string, parse it directly and return as ISO
+  let date;
+
+  // If it's a string, parse it
   if (typeof dateValue === 'string') {
-    const date = new Date(dateValue);
+    date = new Date(dateValue);
     if (!isNaN(date.getTime())) {
-      return date.toISOString();
+      return formatDateString(date);
     }
     return null;
   }
 
   // If it's a number (Excel serial date)
   if (typeof dateValue === 'number') {
-    // Excel dates are stored as number of days since 1/1/1900
-    // We need to calculate the actual date without timezone issues
+    // Excel stores dates as days since 1/1/1900
+    // Excel incorrectly treats 1900 as a leap year (it had a bug)
+    // For dates before Mar 1, 1900 (serial < 60), calculate from Jan 1, 1900
+    // For dates after Feb 28, 1900 (serial >= 60), we need to account for the bug
     
-    // Excel serial date system: 1 = 1/1/1900, accounting for the leap year bug
-    // (Excel incorrectly treats 1900 as a leap year)
-    const excelBaseDate = new Date(1900, 0, 1); // Jan 1, 1900
+    const baseDate = new Date(1900, 0, 1); // Jan 1, 1900
+    const msPerDay = 24 * 60 * 60 * 1000;
     
-    // Calculate the target date by adding days
-    // Note: dateValue is 1-based (1 = Jan 1 1900)
-    const millisecondsPerDay = 24 * 60 * 60 * 1000;
-    const totalMs = excelBaseDate.getTime() + (dateValue - 1) * millisecondsPerDay;
+    // Excel day 1 = Jan 1, 1900, so dateValue - 1 gives us days to add
+    // But Excel treats Feb 29, 1900 as valid (which it isn't)
+    // So for dates after Feb 28, 1900 (serial 60 onwards), subtract 1
+    let excelDaysToAdd = dateValue - 1;
+    if (dateValue >= 60) {
+      excelDaysToAdd = dateValue - 2; // Adjust for Excel's leap year bug
+    }
     
-    // Create date in UTC by calculating day/month/year components
-    // This avoids timezone issues when the date is serialized
-    const targetDate = new Date(totalMs);
-    
-    // Get the UTC components to build a proper ISO string
-    const year = targetDate.getUTCFullYear();
-    const month = String(targetDate.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(targetDate.getUTCDate()).padStart(2, '0');
-    const hours = String(targetDate.getUTCHours()).padStart(2, '0');
-    const minutes = String(targetDate.getUTCMinutes()).padStart(2, '0');
-    const seconds = String(targetDate.getUTCSeconds()).padStart(2, '0');
-    
-    // Return ISO string in UTC (Z means UTC)
-    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.000Z`;
+    date = new Date(baseDate.getTime() + excelDaysToAdd * msPerDay);
+    return formatDateString(date);
   }
 
   return null;
+};
+
+/**
+ * Format date as dd/mm/yyyy string
+ */
+const formatDateString = (date) => {
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
 };
 
 /**
