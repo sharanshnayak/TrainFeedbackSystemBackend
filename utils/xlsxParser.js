@@ -55,13 +55,17 @@ const parseXlsxFile = (filePath, debug = false) => {
           trainNo = cell;
         }
         
-        // If cell contains "Report Date" or "Date", take the next cell value
-        if (cell && (cell.toLowerCase().includes('report date') || cell.toLowerCase().includes('date')) && !reportDate && i + 1 < headerRow.length) {
-          const dateCell = String(headerRow[i + 1]).trim();
-          if (dateCell) {
-            const parsed = parseExcelDate(dateCell);
-            if (parsed) {
-              reportDate = parsed;
+        // If cell contains "Report Date" or "Date", find the next non-empty cell
+        if (cell && (cell.toLowerCase().includes('report date') || cell.toLowerCase().includes('date')) && !reportDate) {
+          for (let j = i + 1; j < headerRow.length; j++) {
+            const valueCell = headerRow[j];
+            const cellStr = String(valueCell).trim();
+            if (cellStr) {
+              const parsed = parseExcelDate(valueCell);
+              if (parsed) {
+                reportDate = parsed;
+              }
+              break;
             }
           }
         }
@@ -78,10 +82,17 @@ const parseXlsxFile = (filePath, debug = false) => {
       // Row 2: Extract train name
       let trainName = '';
       const trainNameRow = rawData[1];
-      for (let i = 0; i < trainNameRow.length - 1; i++) {
+      for (let i = 0; i < trainNameRow.length; i++) {
         const cell = String(trainNameRow[i]).trim();
-        if (cell.includes('Train Name')) {
-          trainName = String(trainNameRow[i + 1]).trim();
+        if (cell.toLowerCase().includes('train name')) {
+          // Find the next non-empty cell
+          for (let j = i + 1; j < trainNameRow.length; j++) {
+            const valueCell = String(trainNameRow[j]).trim();
+            if (valueCell) {
+              trainName = valueCell;
+              break;
+            }
+          }
           break;
         }
       }
