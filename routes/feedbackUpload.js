@@ -77,8 +77,11 @@ router.post('/upload-xlsx', protect, upload.single('file'), async (req, res) => 
 
     for (const feedback of parseResult.feedbacks) {
       try {
-        // Get train name
-        const trainName = await getTrainNameFromNo(feedback.trainNo);
+        // Use trainName from parser first, fallback to trains.json lookup
+        let trainName = feedback.trainName || '';
+        if (!trainName) {
+          trainName = await getTrainNameFromNo(feedback.trainNo);
+        }
 
         // Prepare feedback document for display
         const feedbackDoc = {
