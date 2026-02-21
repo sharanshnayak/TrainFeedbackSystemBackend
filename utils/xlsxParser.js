@@ -46,7 +46,7 @@ const parseXlsxFile = (filePath, debug = false) => {
       // Row 1: Extract train number and report date
       const headerRow = rawData[0];
       let trainNo = '';
-      let reportDate = new Date();
+      let reportDate = null;
       
       for (let i = 0; i < headerRow.length; i++) {
         const cell = String(headerRow[i]).trim();
@@ -55,10 +55,14 @@ const parseXlsxFile = (filePath, debug = false) => {
           trainNo = cell;
         }
         
-        if (cell && !reportDate && (cell.includes('/') || cell.includes('-') || !isNaN(parseFloat(cell)))) {
-          const parsed = parseExcelDate(cell);
-          if (parsed) {
-            reportDate = parsed;
+        // If cell contains "Report Date" or "Date", take the next cell value
+        if (cell && (cell.toLowerCase().includes('report date') || cell.toLowerCase().includes('date')) && !reportDate && i + 1 < headerRow.length) {
+          const dateCell = String(headerRow[i + 1]).trim();
+          if (dateCell) {
+            const parsed = parseExcelDate(dateCell);
+            if (parsed) {
+              reportDate = parsed;
+            }
           }
         }
       }
@@ -75,11 +79,28 @@ const parseXlsxFile = (filePath, debug = false) => {
       let trainName = '';
       const trainNameRow = rawData[1];
       for (let i = 0; i < trainNameRow.length - 1; i++) {
-        const cell = String(trainNameRow[i]).toLowerCase().trim();
+        const cell = String(trainNameRow[i]).trim();
         if (cell.includes('Train Name')) {
           trainName = String(trainNameRow[i + 1]).trim();
           break;
         }
+      }
+
+      // Add error if trainName not found
+      if (!trainName) {
+        errors.push({
+          sheet: sheetName,
+          type: 'trainName',
+          error: 'Train name not found in row 2'
+        });
+      }
+
+      if (!reportDate) {
+        errors.push({
+          sheet: sheetName,
+          type: 'reportDate',
+          error: 'Report date not found in row 1'
+        });
       }
 
       // Row 3: Get column names
@@ -208,11 +229,23 @@ const findColumnIndices = (headerRow) => {
 };
 
 /**
+ * Calculate feedback status based on PSI value
+ */
+const calculateFeedbackStatus = (psi) => {
+  if (psi < 85) return 'Average';
+  if (psi >= 85 && psi <= 88) return 'Good';
+  if (psi >= 89 && psi <= 91) return 'Very Good';
+  if (psi >= 92 && psi <= 97) return 'Excellent';
+  return 'Unknown'; // For PSI > 97
+};
+
+/**
  * Extract feedback data from a row
  */
 const extractFeedbackRow = (row, colIndices, trainNo, reportDate, debug = false) => {
   try {
     const getSafe = (idx) => row[idx] || '';
+    const psi = parseInt(String(getSafe(colIndices.psi)).trim()) || 0;
     
     return {
       feedbackNo: parseInt(String(getSafe(colIndices.feedbackNo)).trim()) || 0,
@@ -223,7 +256,8 @@ const extractFeedbackRow = (row, colIndices, trainNo, reportDate, debug = false)
       ns1: parseInt(String(getSafe(colIndices.ns1)).trim()) || 0,
       ns2: parseInt(String(getSafe(colIndices.ns2)).trim()) || 0,
       ns3: parseInt(String(getSafe(colIndices.ns3)).trim()) || 0,
-      psi: parseInt(String(getSafe(colIndices.psi)).trim()) || 0,
+      psi: psi,
+      feedbackStatus: calculateFeedbackStatus(psi),
       reportDate: reportDate
     };
   } catch (error) {
