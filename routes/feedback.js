@@ -221,7 +221,7 @@ router.get('/', protect, async (req, res) => {
 // @access  Private
 router.put('/:id', protect, async (req, res) => {
   try {
-    const { feedbackNo, trainNo, trainName, coachNo, pnr, mobile, ns1, ns2, ns3, psi, reportDate, feedbackText, feedbackRating, totalFeedbacks, totalPercentageAtPSI, averagePSIRoundTrip } = req.body;
+    const { feedbackNo, trainNo, trainName, coachNo, pnr, mobile, ns1, ns2, ns3, psi, reportDate, feedbackText, feedbackRating } = req.body;
 
     let feedback = await Feedback.findById(req.params.id);
     if (!feedback) {
@@ -241,9 +241,6 @@ router.put('/:id', protect, async (req, res) => {
     if (reportDate !== undefined) feedback.reportDate = reportDate;
     if (feedbackText !== undefined) feedback.feedbackText = feedbackText;
     if (feedbackRating !== undefined) feedback.feedbackRating = feedbackRating;
-    if (totalFeedbacks !== undefined) feedback.totalFeedbacks = totalFeedbacks;
-    if (totalPercentageAtPSI !== undefined) feedback.totalPercentageAtPSI = totalPercentageAtPSI;
-    if (averagePSIRoundTrip !== undefined) feedback.averagePSIRoundTrip = averagePSIRoundTrip;
 
     feedback = await feedback.save();
 

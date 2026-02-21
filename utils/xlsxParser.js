@@ -268,7 +268,7 @@ const extractFeedbackRow = (row, colIndices, trainNo, reportDate, debug = false)
       ns2: parseInt(String(getSafe(colIndices.ns2)).trim()) || 0,
       ns3: parseInt(String(getSafe(colIndices.ns3)).trim()) || 0,
       psi: psi,
-      feedbackStatus: calculateFeedbackStatus(psi),
+      feedbackRating: calculateFeedbackStatus(psi),
       reportDate: reportDate
     };
   } catch (error) {

@@ -43,11 +43,6 @@ const feedbackSchema = new mongoose.Schema({
     type: Number,
     required: [true, 'Please provide PSI value']
   },
-  feedbackStatus: {
-    type: String,
-    enum: ['Average', 'Good', 'Very Good', 'Excellent', 'NA'],
-    default: 'NA'
-  },
   reportDate: {
     type: Date,
     required: [true, 'Please provide report date']
@@ -59,8 +54,8 @@ const feedbackSchema = new mongoose.Schema({
   },
   feedbackRating: {
     type: String,
-    enum: ['', 'poor', 'average', 'good', 'very good', 'excellent'],
-    default: ''
+    enum: ['', 'Poor', 'Average', 'Good', 'Very Good', 'Excellent', 'NA'],
+    default: 'NA'
   },
   submittedBy: {
     type: mongoose.Schema.Types.ObjectId,

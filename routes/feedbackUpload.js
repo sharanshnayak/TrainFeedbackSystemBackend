@@ -99,10 +99,9 @@ router.post('/upload-xlsx', protect, upload.single('file'), async (req, res) => 
           ns2: feedback.ns2,
           ns3: feedback.ns3,
           psi: feedback.psi,
-          feedbackStatus: feedback.feedbackStatus || 'NA',
+          feedbackRating: feedback.feedbackRating || 'NA',
           reportDate: feedback.reportDate,
           feedbackText: '',
-          feedbackRating: '',
           // Validation status
           valid: validateFeedbackForDisplay(feedback),
           validationErrors: getValidationErrors(feedback)
@@ -211,10 +210,9 @@ router.post('/submit-bulk', protect, async (req, res) => {
           ns2: feedback.ns2 || 0,
           ns3: feedback.ns3 || 0,
           psi: feedback.psi,
-          feedbackStatus: feedback.feedbackStatus || 'Unknown',
-          reportDate: reportDate,
+          feedbackRating: feedback.feedbackRating || 'NA',
           feedbackText: feedback.feedbackText || '',
-          feedbackRating: feedback.feedbackRating || '',
+          reportDate: reportDate,
           submittedBy: req.user._id,
           submittedByUserId: req.user.userId
         });
