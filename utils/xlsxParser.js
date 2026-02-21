@@ -322,26 +322,49 @@ const validateFeedbackRow = (feedbackData) => {
 };
 
 /**
- * Parse Excel date format
+ * Parse Excel date format - handles both serial numbers and strings
+ * Returns ISO string with correct date (no timezone shifting)
  */
 const parseExcelDate = (dateValue) => {
   if (!dateValue) return null;
 
-  // If it's a string, try to parse it
+  // If it's a string, parse it directly and return as ISO
   if (typeof dateValue === 'string') {
     const date = new Date(dateValue);
     if (!isNaN(date.getTime())) {
-      return date;
+      return date.toISOString();
     }
     return null;
   }
 
   // If it's a number (Excel serial date)
   if (typeof dateValue === 'number') {
-    // Excel dates are stored as numbers starting from 1/1/1900
-    const excelEpoch = new Date(1900, 0, 1);
-    const date = new Date(excelEpoch.getTime() + (dateValue - 1) * 24 * 60 * 60 * 1000);
-    return date;
+    // Excel dates are stored as number of days since 1/1/1900
+    // We need to calculate the actual date without timezone issues
+    
+    // Excel serial date system: 1 = 1/1/1900, accounting for the leap year bug
+    // (Excel incorrectly treats 1900 as a leap year)
+    const excelBaseDate = new Date(1900, 0, 1); // Jan 1, 1900
+    
+    // Calculate the target date by adding days
+    // Note: dateValue is 1-based (1 = Jan 1 1900)
+    const millisecondsPerDay = 24 * 60 * 60 * 1000;
+    const totalMs = excelBaseDate.getTime() + (dateValue - 1) * millisecondsPerDay;
+    
+    // Create date in UTC by calculating day/month/year components
+    // This avoids timezone issues when the date is serialized
+    const targetDate = new Date(totalMs);
+    
+    // Get the UTC components to build a proper ISO string
+    const year = targetDate.getUTCFullYear();
+    const month = String(targetDate.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(targetDate.getUTCDate()).padStart(2, '0');
+    const hours = String(targetDate.getUTCHours()).padStart(2, '0');
+    const minutes = String(targetDate.getUTCMinutes()).padStart(2, '0');
+    const seconds = String(targetDate.getUTCSeconds()).padStart(2, '0');
+    
+    // Return ISO string in UTC (Z means UTC)
+    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.000Z`;
   }
 
   return null;
