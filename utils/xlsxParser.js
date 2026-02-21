@@ -140,7 +140,11 @@ const parseXlsxFile = (filePath, debug = false) => {
         });
       }
     });
-
+    console.log(
+        'Sheet Data',sheetData
+    );
+    console.log('all feedbacks',allFeedbacks);
+    
     return {
       success: errors.length === 0,
       feedbacks: allFeedbacks,

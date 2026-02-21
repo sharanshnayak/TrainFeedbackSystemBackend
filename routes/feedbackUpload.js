@@ -54,6 +54,10 @@ router.post('/upload-xlsx', protect, upload.single('file'), async (req, res) => 
 
     // Parse XLSX file
     const parseResult = parseXlsxFile(req.file.path);
+    console.log('=== PARSER RESULT ===');
+    console.log('Total parsed:', parseResult.totalParsed);
+    console.log('First feedback trainName:', parseResult.feedbacks[0]?.trainName);
+    console.log('SheetData:', JSON.stringify(parseResult.sheetData, null, 2));
 
     if (!parseResult.success && parseResult.totalParsed === 0) {
       // Clean up uploaded file
@@ -142,6 +146,10 @@ router.post('/upload-xlsx', protect, upload.single('file'), async (req, res) => 
       validationErrors: extractionErrors,
       message: `Successfully extracted ${feedbacksForDisplay.length} feedbacks from XLSX file. Please review and submit.`
     };
+
+    console.log('=== SENDING RESPONSE ===');
+    console.log('SheetData in response:', JSON.stringify(results.sheetData, null, 2));
+    console.log('First feedback trainName in response:', feedbacksForDisplay[0]?.trainName);
 
     res.status(200).json(results);
   } catch (error) {
