@@ -193,6 +193,13 @@ router.post('/submit-bulk', protect, async (req, res) => {
     for (const feedback of feedbacks) {
       const errors = getValidationErrors(feedback);
       if (errors.length === 0) {
+        // Convert dd/mm/yyyy string to Date object
+        let reportDate = feedback.reportDate;
+        if (typeof feedback.reportDate === 'string') {
+          const [day, month, year] = feedback.reportDate.split('/');
+          reportDate = new Date(year, parseInt(month) - 1, day);
+        }
+
         validFeedbacks.push({
           feedbackNo: feedback.feedbackNo,
           trainNo: feedback.trainNo,
@@ -205,7 +212,7 @@ router.post('/submit-bulk', protect, async (req, res) => {
           ns3: feedback.ns3 || 0,
           psi: feedback.psi,
           feedbackStatus: feedback.feedbackStatus || 'Unknown',
-          reportDate: feedback.reportDate,
+          reportDate: reportDate,
           feedbackText: feedback.feedbackText || '',
           feedbackRating: feedback.feedbackRating || '',
           submittedBy: req.user._id,
@@ -303,6 +310,19 @@ const getValidationErrors = (feedbackData) => {
   // Validate report date
   if (!feedbackData.reportDate) {
     errors.push('Report date is required');
+  } else if (typeof feedbackData.reportDate === 'string') {
+    // Validate dd/mm/yyyy format
+    const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
+    if (!dateRegex.test(feedbackData.reportDate)) {
+      errors.push('Report date must be in dd/mm/yyyy format');
+    } else {
+      // Validate it's a valid date
+      const [day, month, year] = feedbackData.reportDate.split('/');
+      const date = new Date(year, parseInt(month) - 1, day);
+      if (isNaN(date.getTime())) {
+        errors.push('Invalid report date');
+      }
+    }
   }
 
   // Validate NS values are non-negative
