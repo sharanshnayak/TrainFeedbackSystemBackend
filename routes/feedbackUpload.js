@@ -115,12 +115,25 @@ router.post('/upload-xlsx', protect, upload.single('file'), async (req, res) => 
       if (err) console.error('Error deleting file:', err);
     });
 
+    // Normalize parser errors to include feedbackNo for consistent frontend handling
+    const normalizedParseErrors = parseResult.errors.map((err) => {
+      if (err.data && err.data.feedbackNo) {
+        return {
+          feedbackNo: err.data.feedbackNo,
+          errors: err.errors || [err.error || 'Unknown error']
+        };
+      }
+      return {
+        message: err.error || `Sheet ${err.sheet}, Row ${err.row}: Unknown error`
+      };
+    });
+
     // Compile results
     const results = {
       success: parseResult.errors.length === 0 && extractionErrors.length === 0,
       totalExtracted: feedbacksForDisplay.length,
       feedbacks: feedbacksForDisplay,
-      extractionErrors: parseResult.errors,
+      extractionErrors: normalizedParseErrors,
       validationErrors: extractionErrors,
       message: `Successfully extracted ${feedbacksForDisplay.length} feedbacks from XLSX file. Please review and submit.`
     };
