@@ -192,6 +192,30 @@ router.post('/submit-bulk', protect, async (req, res) => {
     for (const feedback of feedbacks) {
       const errors = getValidationErrors(feedback);
       if (errors.length === 0) {
+        // Check if feedback with same trainNo, reportDate, and feedbackNo already exists
+        let reportDateObj = feedback.reportDate;
+        if (typeof feedback.reportDate === 'string') {
+          const [day, month, year] = feedback.reportDate.split('/');
+          reportDateObj = new Date(year, parseInt(month) - 1, day);
+        }
+        const startOfDay = new Date(reportDateObj.setHours(0, 0, 0, 0));
+        const endOfDay = new Date(new Date(reportDateObj).setHours(23, 59, 59, 999));
+
+        const existingFeedback = await Feedback.findOne({
+          trainNo: feedback.trainNo,
+          feedbackNo: feedback.feedbackNo,
+          reportDate: { $gte: startOfDay, $lte: endOfDay }
+        });
+
+        if (existingFeedback) {
+          invalidFeedbacks.push({
+            feedbackNo: feedback.feedbackNo,
+            trainNo: feedback.trainNo,
+            coachNo: feedback.coachNo,
+            errors: [`Feedback No. ${feedback.feedbackNo} already exists for Train No. ${feedback.trainNo} on Report Date ${feedback.reportDate}`]
+          });
+          continue;
+        }
         // Convert dd/mm/yyyy string to Date object
         let reportDate = feedback.reportDate;
         if (typeof feedback.reportDate === 'string') {

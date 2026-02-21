@@ -50,6 +50,25 @@ router.post('/', protect, [
     // Use feedbackNo provided by client
     const feedbackNo = Number(feedbackNoFromBody);
 
+    // Check if feedback with same trainNo, reportDate, and feedbackNo already exists
+    const feedbackDate = new Date(reportDate);
+    const startOfDay = new Date(feedbackDate.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(new Date(reportDate).setHours(23, 59, 59, 999));
+
+    const existingFeedback = await Feedback.findOne({
+      trainNo,
+      feedbackNo,
+      reportDate: { $gte: startOfDay, $lte: endOfDay }
+    });
+
+    if (existingFeedback) {
+      const formattedDate = new Date(reportDate).toLocaleDateString('en-GB');
+      return res.status(400).json({
+        success: false,
+        message: `Feedback No. ${feedbackNo} already exists for Train No. ${trainNo} on Report Date ${formattedDate}`
+      });
+    }
+
     // Create feedback
     const feedback = await Feedback.create({
       feedbackNo,
