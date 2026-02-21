@@ -253,7 +253,7 @@ router.post('/submit-bulk', protect, async (req, res) => {
     if (invalidFeedbacks.length > 0) {
       return res.status(400).json({
         success: false,
-        message: 'Some feedbacks failed validation',
+        message: 'Feedback No. already exists or Report Date invalid',
         validCount: validFeedbacks.length,
         invalidCount: invalidFeedbacks.length,
         invalidFeedbacks: invalidFeedbacks
