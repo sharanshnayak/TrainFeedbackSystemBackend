@@ -8,9 +8,8 @@ const { protect } = require('../middleware/auth');
 // @desc    Create a new feedback
 // @access  Private
 router.post('/', protect, [
-  body('date').isISO8601().withMessage('Valid date is required'),
   body('trainNo').trim().notEmpty().withMessage('Train number is required'),
-  body('trainName').trim().notEmpty().withMessage('Train name is required'),
+  body('trainName').trim().optional(),
   body('feedbackNo').trim().notEmpty().withMessage('Feedback number is required').isInt().withMessage('Feedback number must be an integer'),
   body('coachNo').trim().notEmpty().withMessage('Coach number is required'),
   body('pnr').matches(/^\d+$/).withMessage('PNR must contain only numbers'),
@@ -26,7 +25,6 @@ router.post('/', protect, [
   try {
     const {
       feedbackNo: feedbackNoFromBody,
-      date,
       trainNo,
       trainName,
       coachNo,
@@ -38,10 +36,7 @@ router.post('/', protect, [
       psi,
       reportDate,
       feedbackText,
-      feedbackRating,
-      totalFeedbacks,
-      totalPercentageAtPSI,
-      averagePSIRoundTrip
+      feedbackRating
     } = req.body;
 
     // Validation: Either feedbackText or feedbackRating must be provided
@@ -58,9 +53,8 @@ router.post('/', protect, [
     // Create feedback
     const feedback = await Feedback.create({
       feedbackNo,
-      date,
       trainNo,
-      trainName,
+      trainName: trainName || '',
       coachNo,
       pnr,
       mobile,
@@ -71,9 +65,6 @@ router.post('/', protect, [
       reportDate,
       feedbackText: feedbackText || '',
       feedbackRating: feedbackRating || '',
-      totalFeedbacks: totalFeedbacks || 0,
-      totalPercentageAtPSI: totalPercentageAtPSI || 0,
-      averagePSIRoundTrip: averagePSIRoundTrip || 0,
       submittedBy: req.user._id,
       submittedByUserId: req.user.userId
     });

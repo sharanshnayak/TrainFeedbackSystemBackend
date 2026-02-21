@@ -17,8 +17,8 @@ app.use(helmet());
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 100 // limit each IP to 100 requests per minute
 });
 app.use('/api/', limiter);
 
@@ -35,6 +35,7 @@ app.use(cors({
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/feedback', require('./routes/feedback'));
+app.use('/api/feedback', require('./routes/feedbackUpload')); // File upload routes
 app.use('/api/data', require('./routes/data'));
 
 // Health check

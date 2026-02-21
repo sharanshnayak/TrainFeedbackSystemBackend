@@ -5,17 +5,13 @@ const feedbackSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
-  date: {
-    type: Date,
-    required: [true, 'Please provide a date']
-  },
   trainNo: {
     type: String,
     required: [true, 'Please provide train number']
   },
   trainName: {
     type: String,
-    required: [true, 'Please provide train name']
+    default: ''
   },
   coachNo: {
     type: String,
@@ -53,23 +49,13 @@ const feedbackSchema = new mongoose.Schema({
   },
   feedbackText: {
     type: String,
-    maxlength: [500, 'Feedback text cannot exceed 500 characters']
+    maxlength: [500, 'Feedback text cannot exceed 500 characters'],
+    default: ''
   },
   feedbackRating: {
     type: String,
-    enum: ['', 'poor', 'average', 'good', 'very good', 'excellent']
-  },
-  totalFeedbacks: {
-    type: Number,
-    default: 0
-  },
-  totalPercentageAtPSI: {
-    type: Number,
-    default: 0
-  },
-  averagePSIRoundTrip: {
-    type: Number,
-    default: 0
+    enum: ['', 'poor', 'average', 'good', 'very good', 'excellent'],
+    default: ''
   },
   submittedBy: {
     type: mongoose.Schema.Types.ObjectId,
@@ -83,12 +69,22 @@ const feedbackSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
   }
 });
 
+// Update updatedAt on save
+feedbackSchema.pre('save', function(next) {
+  this.updatedAt = Date.now();
+  next();
+});
+
 // Create compound index for faster queries
-feedbackSchema.index({ trainNo: 1, date: 1 });
-feedbackSchema.index({ date: 1 });
+feedbackSchema.index({ trainNo: 1, reportDate: 1 });
+feedbackSchema.index({ reportDate: 1 });
 
 module.exports = mongoose.model('Feedback', feedbackSchema);
 
